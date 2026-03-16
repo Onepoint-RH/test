@@ -1,0 +1,847 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="referrer" content="no-referrer" />
+  <!-- CSP : site statique, aucune connexion réseau nécessaire -->
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self';
+                 base-uri 'self';
+                 object-src 'none';
+                 frame-ancestors 'none';
+                 connect-src 'none';
+                 img-src 'self' data:;
+                 style-src 'self' 'unsafe-inline';
+                 script-src 'self' 'unsafe-inline';
+                 form-action 'self'">
+  <title>Auto-diagnostic SBO — Maturité Skills-Based Organization</title>
+  <style>
+    :root{
+      --bg:#0b1220; --card:#111a2e; --muted:#9fb0d0; --text:#eef3ff;
+      --accent:#00a5e5; --ok:#2dd4bf; --warn:#fbbf24; --bad:#fb7185;
+      --border:rgba(255,255,255,.10);
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --radius:16px;
+      --max:1100px;
+      font-synthesis-weight: none;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
+      background: radial-gradient(1200px 700px at 20% 10%, rgba(0,165,229,.18), transparent 55%),
+                  radial-gradient(900px 500px at 90% 30%, rgba(45,212,191,.14), transparent 60%),
+                  var(--bg);
+      color:var(--text);
+      line-height:1.35;
+    }
+    header{
+      padding: 28px 18px 12px;
+      max-width:var(--max);
+      margin:0 auto;
+    }
+    h1{margin:0 0 6px; font-size: clamp(22px, 2.8vw, 34px); letter-spacing:.2px}
+    .sub{color:var(--muted); max-width: 90ch}
+    .wrap{max-width:var(--max); margin:0 auto; padding: 0 18px 42px;}
+    .grid{display:grid; grid-template-columns: 1.1fr .9fr; gap:18px;}
+    @media (max-width: 980px){ .grid{grid-template-columns:1fr;} }
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .card .hd{
+      padding:14px 16px;
+      border-bottom:1px solid var(--border);
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+    }
+    .tag{display:inline-flex; align-items:center; gap:8px; font-weight:650}
+    .dot{width:10px;height:10px;border-radius:50%;background:var(--accent)}
+    .card .bd{padding: 16px;}
+    .note{
+      background: rgba(0,165,229,.08);
+      border:1px solid rgba(0,165,229,.25);
+      padding:10px 12px;
+      border-radius: 12px;
+      color: var(--muted);
+      margin: 12px 0 0;
+      font-size: 13px;
+    }
+    fieldset{
+      border:1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px 12px 10px;
+      margin: 0 0 12px;
+    }
+    legend{
+      padding:0 8px;
+      color: var(--text);
+      font-weight: 700;
+      letter-spacing:.2px;
+    }
+    .qmeta{
+      color: var(--muted);
+      font-size: 13px;
+      margin: 6px 0 10px;
+    }
+    .choices{display:grid; gap:10px;}
+    .choice{
+      display:flex; gap:10px;
+      padding: 10px 10px;
+      border:1px solid rgba(255,255,255,.10);
+      border-radius: 12px;
+      background: rgba(0,0,0,.10);
+    }
+    .choice:hover{border-color: rgba(0,165,229,.40)}
+    input[type="radio"]{margin-top:2px; accent-color: var(--accent)}
+    .lvl{
+      display:inline-flex; align-items:center;
+      font-size:12px; padding:2px 8px; border-radius: 999px; margin-left:8px;
+      border:1px solid var(--border); color: var(--muted);
+    }
+    .btnrow{display:flex; flex-wrap:wrap; gap:10px; margin-top:14px}
+    button{
+      appearance:none; border:1px solid rgba(255,255,255,.14);
+      color: var(--text);
+      background: rgba(0,165,229,.20);
+      padding: 10px 12px;
+      border-radius: 12px;
+      cursor:pointer;
+      font-weight: 700;
+      letter-spacing:.2px;
+    }
+    button:hover{background: rgba(0,165,229,.28)}
+    button:disabled{opacity:.55; cursor:not-allowed}
+    .ghost{background: rgba(255,255,255,.06)}
+    .ghost:hover{background: rgba(255,255,255,.10)}
+    .danger{background: rgba(251,113,133,.18)}
+    .danger:hover{background: rgba(251,113,133,.24)}
+    .kpi{
+      display:grid; grid-template-columns: repeat(3, 1fr); gap:12px;
+    }
+    @media (max-width: 640px){ .kpi{grid-template-columns:1fr;} }
+    .k{
+      border:1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px;
+      background: rgba(0,0,0,.10);
+    }
+    .k .n{font-size: 26px; font-weight: 850}
+    .k .l{color: var(--muted); font-size: 13px}
+    .pill{
+      display:inline-flex; align-items:center; gap:8px;
+      padding: 6px 10px; border-radius:999px;
+      border:1px solid var(--border);
+      background: rgba(0,0,0,.12);
+      color: var(--muted);
+      font-size: 12.5px;
+    }
+    .pill b{color: var(--text)}
+    .sep{height:1px;background: var(--border); margin: 14px 0}
+    .hidden{display:none !important}
+    .warnbox{
+      border:1px solid rgba(251,191,36,.35);
+      background: rgba(251,191,36,.10);
+      padding: 10px 12px;
+      border-radius: 12px;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+    .okbox{
+      border:1px solid rgba(45,212,191,.35);
+      background: rgba(45,212,191,.08);
+      padding: 10px 12px;
+      border-radius: 12px;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+    canvas{width:100%; height:auto; border:1px solid var(--border); border-radius: 14px; background: rgba(0,0,0,.10)}
+    .axisBlock{border:1px solid var(--border); border-radius: 14px; padding: 12px; margin: 10px 0; background: rgba(0,0,0,.10)}
+    .axisHdr{display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px}
+    .axisHdr h3{margin:0; font-size: 16px}
+    .small{color: var(--muted); font-size: 13px}
+    ul{margin: 8px 0 0 18px}
+    a{color: var(--accent)}
+    .footer{
+      color: var(--muted);
+      font-size: 12.5px;
+      margin-top: 16px;
+    }
+  </style>
+</head>
+
+<body>
+<header>
+  <h1>Auto-diagnostic de maturité <span style="color:var(--accent)">Skills-Based Organization (SBO)</span></h1>
+  <div class="sub">
+    Sélectionnez <b>1 proposition par sous-axe</b> (10 au total). Puis cliquez sur <b>“Découvrir mes résultats”</b>.
+    <div class="note">
+      🔒 <b>Confidentialité</b> : cette page fonctionne <b>sans serveur</b>. Vos réponses restent dans votre navigateur (aucun envoi réseau).
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="grid">
+
+    <!-- Questionnaire -->
+    <section class="card" aria-labelledby="qTitle">
+      <div class="hd">
+        <div class="tag"><span class="dot"></span><span id="qTitle">Questionnaire (10 sous-axes)</span></div>
+        <span class="pill"><b>Échelle</b> : 1 (faible) → 3 (élevée)</span>
+      </div>
+      <div class="bd" id="questionnaire"></div>
+
+      <div class="bd">
+        <div id="validationMsg" class="warnbox hidden" role="alert">
+          Merci de répondre à <b>tous</b> les sous-axes (10/10) avant d’afficher les résultats.
+        </div>
+        <div class="btnrow">
+          <button id="btnResults" type="button">Découvrir mes résultats</button>
+          <button id="btnReset" type="button" class="danger">Effacer mes réponses</button>
+          <button id="btnExport" type="button" class="ghost">Exporter (JSON)</button>
+        </div>
+        <div class="footer">
+          Astuce : utilisez la touche <b>Tab</b> pour naviguer, <b>Espace</b> pour sélectionner.
+        </div>
+      </div>
+    </section>
+
+    <!-- Résultats -->
+    <aside class="card" aria-labelledby="rTitle">
+      <div class="hd">
+        <div class="tag"><span class="dot"></span><span id="rTitle">Résultats & recommandations</span></div>
+        <span id="statusPill" class="pill"><b>Statut</b> : en attente</span>
+      </div>
+
+      <div class="bd">
+        <div id="resultIntro" class="warnbox" role="status">
+          Répondez au questionnaire puis cliquez sur <b>“Découvrir mes résultats”</b>.
+        </div>
+
+        <div id="results" class="hidden">
+          <!-- Encart général -->
+          <div class="okbox" id="globalCard"></div>
+
+          <!-- KPIs -->
+          <div class="kpi" aria-label="Indicateurs clés">
+            <div class="k">
+              <div class="n" id="kOverall">—</div>
+              <div class="l">Score global (sur 3)</div>
+            </div>
+            <div class="k">
+              <div class="n" id="kLevel">—</div>
+              <div class="l">Niveau global</div>
+            </div>
+            <div class="k">
+              <div class="n" id="kAnswered">—</div>
+              <div class="l">Sous-axes complétés</div>
+            </div>
+          </div>
+
+          <div class="sep"></div>
+
+          <!-- Radar -->
+          <div class="axisBlock">
+            <div class="axisHdr">
+              <h3>Radar de maturité (4 axes)</h3>
+              <span class="small">Repères : 1 / 2 / 3</span>
+            </div>
+            <div style="margin-top:10px">
+              <canvas id="radar" width="540" height="420" aria-label="Graphique radar" role="img"></canvas>
+              <div class="small" style="margin-top:8px">
+                <span class="pill"><b>Votre profil</b> : polygone bleu</span>
+                <span class="pill" style="margin-left:6px"><b>Niveaux</b> : grilles 1–3</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Détails par axe -->
+          <div class="axisBlock">
+            <div class="axisHdr">
+              <h3>Détail du score par axe</h3>
+              <span class="small">Moyenne des sous-axes (sur 3)</span>
+            </div>
+            <div id="axisDetails"></div>
+          </div>
+
+          <!-- Recommandations -->
+          <div class="axisBlock">
+            <div class="axisHdr">
+              <h3>Recommandations d’actions</h3>
+              <span class="small">Ciblées selon votre niveau par axe</span>
+            </div>
+            <div id="reco"></div>
+          </div>
+
+        </div>
+      </div>
+    </aside>
+
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/**
+ * Questionnaire basé sur la matrice fournie (4 axes / 10 sous-axes)
+ * Propositions issues de WIP MATRICE MATURITE SBO.pptx
+ */
+const AXES = [
+  {
+    key: "alignement",
+    label: "Alignement stratégique",
+    subaxes: [
+      {
+        id: "A1",
+        title: "Conscience & alignement initial",
+        prompt: "Quel énoncé décrit le mieux votre situation ?",
+        choices: [
+          "Une première direction (souvent RH) prend conscience des opportunités business et humaines du modèle SBO",
+          "La direction RH est soutenue et sponsorisée par les directions métiers qui voient l’intérêt de l’approche SBO",
+          "Les directions RH et métiers travaillent main dans la main pour faire de la compétence le langage et le socle commun à toute l’entreprise."
+        ]
+      },
+      {
+        id: "A2",
+        title: "Business case, feuille de route & ressources",
+        prompt: "Quel énoncé décrit le mieux votre situation ?",
+        choices: [
+          "La direction « moteur » prépare son business case afin de sensibiliser et embarquer les directions métiers dans une volonté commune de transformation",
+          "Le pilotage par les compétences devient un objectif stratégique commun, défini dans la feuille de route de l’entreprise.",
+          "Au-delà d’une feuille de route stratégique, des ressources dédiées sont mobilisées à long-terme pour piloter les compétences (ressources humaines, financières, temps…)"
+        ]
+      }
+    ]
+  },
+  {
+    key: "culture",
+    label: "Culture & Leadership",
+    subaxes: [
+      {
+        id: "C1",
+        title: "Culture d’entreprise & apprentissage",
+        prompt: "Quel énoncé décrit le mieux votre situation ?",
+        choices: [
+          "La culture de l’entreprise est ancrée dans la stabilité et la hiérarchie. Les compétences sont valorisées au sens large.",
+          "La culture de l’entreprise valorise l’apprentissage continu et le développement des compétences sans lien direct avec l’évaluation de la performance et la rémunération.",
+          "La culture de l’entreprise est ancrée dans l’agilité organisationnelle, l’apprentissage continu sur le temps de travail et les compétences critiques mobilisées sont valorisées financièrement."
+        ]
+      },
+      {
+        id: "C2",
+        title: "Leadership & promotion de l’approche compétences",
+        prompt: "Quel énoncé décrit le mieux votre situation ?",
+        choices: [
+          "Le modèle managérial est encore relativement traditionnel, basé sur les postes mais ouvert à l’évolution vers un pilotage davantage orientée sur la valorisation et le développement des compétences et des appétences des collaborateurs.",
+          "Le Leadership promeut l’approche par les compétences et les initiatives de développement auprès des équipes.",
+          "Le leadership promeut activement l’apprentissage continu, prend du temps pour échanger individuellement avec les employés, et recommander des actions personnalisées au service du plan de développement de chacun"
+        ]
+      },
+      {
+        id: "C3",
+        title: "Managers : coaching & exemplarité",
+        prompt: "Quel énoncé décrit le mieux votre situation ?",
+        choices: [
+          "Les managers sont autonomes et leurs pratiques divergent en matière d’accompagnement au développement des collaborateurs. Il n’y a pas de parcours, processus ou formation managériale dédiée.",
+          "Les managers sont accompagnés par les RH et/ou des formations dédiés à la prise en main de leur rôle de coach du développement des talents.",
+          "Leadership est exemplaire. Les managers sont formés et équipés pour accompagner leurs employés mais sont aussi role models : ils prennent eux-mêmes du temps pour développer et partager leurs connaissances."
+        ]
+      }
+    ]
+  },
+  {
+    key: "orgproc",
+    label: "Organisation & processus",
+    subaxes: [
+      {
+        id: "O1",
+        title: "Cartographie & anticipation des compétences",
+        prompt: "Quel énoncé décrit le mieux votre situation ?",
+        choices: [
+          "Les premières réflexions de l’entreprise s’orientent sur l’intégration des compétences aux processus de recrutement et/ou de gestion des talents.",
+          "Une cartographie des métiers et des compétences existe et permet d’intégrer les compétences dans certains processus RH (pas tous).",
+          "Les compétences critiques de l’organisation sont anticipées, des niveaux attendus sont identifiés et la cartographie des compétences existantes permet de mesurer l’écart de compétences et d’anticiper les plans d’investissement (recrutement, formation, externalisation...)"
+        ]
+      },
+      {
+        id: "O2",
+        title: "Formation & opportunités de développement",
+        prompt: "Quel énoncé décrit le mieux votre situation ?",
+        choices: [
+          "Les opportunités de formation proposées aux collaborateurs s’orientent davantage vers des formations obligatoires aux métiers, à la sécurité, etc.",
+          "Une plateforme et des opportunités de formation variées sont proposées, mais ne sont pas personnalisées aux souhaits de développement de chaque employé.",
+          "Des plans de développement ciblés et des opportunités de formation et de mobilité personnalisés sont proposées pour projeter les employés sur les métiers de demain."
+        ]
+      },
+      {
+        id: "O3",
+        title: "Modèle d’organisation & transversalité",
+        prompt: "Quel énoncé décrit le mieux votre situation ?",
+        choices: [
+          "Les équipes sont organisées de manière traditionnelle, par métier, avec une certaine forme de hiérarchie.",
+          "De la transversalité s’installe dans certaines équipes propices à des modes de fonctionnement plus agiles et moins fonctionnels (exemple : équipe Tech, projet…)",
+          "Le business model et l’organisation des équipes évoluent vers plus d’agilité, de transversalité et moins de silos fonctionnels."
+        ]
+      },
+      {
+        id: "O4",
+        title: "Compétences dans performance & rémunération",
+        prompt: "Quel énoncé décrit le mieux votre situation ?",
+        choices: [
+          "La compétence est regardée mais n’est pas utilisée comme un critère d’évaluation de la performance ni comme un critère de rémunération",
+          "La compétence, voire l’expertise, commence à faire l’objet de nouvelles voies moins statutaires au sein de l’organisation (voies d’expertises vs managériales). Un lien tend à s’installer avec la performance et la rémunération.",
+          "La compétence devient une unité mesurable et un critère fondamental de l’évaluation et de la rémunération des employés."
+        ]
+      }
+    ]
+  },
+  {
+    key: "tech",
+    label: "Technologie",
+    subaxes: [
+      {
+        id: "T1",
+        title: "Outillage de pilotage des compétences",
+        prompt: "Quel énoncé décrit le mieux votre situation ?",
+        choices: [
+          "La compétence ne fait pas l’objet d’un pilotage outillé au sein de l’organisation.",
+          "Des outils partiels ou encore artisanaux sont utilisés et permettent de centraliser les données et compétences mobilisées pour optimiser la prise de décisions (tableurs ou équivalents)",
+          "Un ou plusieurs outils de pilotage des compétences est déployé (SIRH, Talent marketplaces, outils de formation personnalisés) permettant de collecter, d’analyser et de maintenir à jour les compétences en temps réel, prendre des décisions plus éclairées et proposer un accompagnement plus personnalisé à chaque employé."
+        ]
+      }
+    ]
+  }
+];
+
+// Seuils simples (sur 3) -> niveau 1/2/3
+function levelFromScore(score){
+  if (score < 1.67) return 1;
+  if (score < 2.34) return 2;
+  return 3;
+}
+
+const GLOBAL_LEVELS = {
+  1: {
+    title: "Maturité faible",
+    desc: "Phase d’exploration / d’alignement initial : la dynamique SBO démarre, mais reste encore peu structurée et peu outillée."
+  },
+  2: {
+    title: "Maturité moyenne",
+    desc: "Phase de structuration : des fondations sont posées (socles culturels, cartographie, premiers processus), avec un déploiement progressif."
+  },
+  3: {
+    title: "Maturité élevée",
+    desc: "Phase de déploiement & amélioration continue : l’approche compétences devient un langage commun, intégrée aux processus, et soutenue par des outils."
+  }
+};
+
+// Recommandations par axe et par niveau (propositions)
+const RECO = {
+  alignement: {
+    1: [
+      "Formaliser un business case SBO (enjeux business + enjeux humains) et identifier 1–2 sponsors métiers.",
+      "Définir une feuille de route en 3 horizons (court / moyen / long terme) avec des indicateurs de succès.",
+      "Lancer un pilote sur un périmètre prioritaire pour créer des preuves rapides."
+    ],
+    2: [
+      "Clarifier la gouvernance : sponsor, rôles RH/métiers, rituels de pilotage.",
+      "Aligner la feuille de route compétences avec la stratégie et la people strategy.",
+      "Sécuriser les ressources (budget, data, change, temps managérial) pour passer à l’échelle."
+    ],
+    3: [
+      "Industrialiser les arbitrages (recruter vs former vs externaliser) basés sur les compétences.",
+      "Mettre en place une boucle d’amélioration continue (revues régulières des skills critiques).",
+      "Diffuser un langage commun compétences (référentiel/taxonomie + communication)."
+    ]
+  },
+  culture: {
+    1: [
+      "Définir un narratif simple : “pourquoi compétences ?” + exemples concrets pour managers et collaborateurs.",
+      "Former une première cohorte de managers au rôle de coach de développement (rituels, feedback, mobilité).",
+      "Créer des signaux culturels : temps d’apprentissage, reconnaissance, communautés."
+    ],
+    2: [
+      "Outiller les managers : guides d’entretien compétences, grilles d’observation, parcours managérial.",
+      "Rendre visibles les parcours (upskilling/reskilling) et encourager la mobilité interne.",
+      "Ancrer des pratiques : 1:1 développement, revues talents orientées compétences."
+    ],
+    3: [
+      "Aligner reconnaissance/rémunération sur compétences critiques et progression démontrée.",
+      "Déployer communautés de pratique & mentoring à grande échelle.",
+      "Mesurer et piloter la culture d’apprentissage (participation, progression, mobilité)."
+    ]
+  },
+  orgproc: {
+    1: [
+      "Démarrer une cartographie simple sur un périmètre prioritaire (compétences clés + niveaux attendus).",
+      "Revoir 1 processus RH (recrutement ou formation) pour y injecter la logique compétences.",
+      "Identifier les compétences critiques et les écarts avec un diagnostic léger."
+    ],
+    2: [
+      "Étendre la cartographie aux processus clés (recrutement, mobilité, formation) avec une taxonomie cohérente.",
+      "Personnaliser progressivement les parcours (recommandations par profil/aspiration).",
+      "Encourager l’organisation transverse (projets, missions, staffing interne)."
+    ],
+    3: [
+      "Piloter l’allocation des talents par compétences et mesurer l’impact (mobilité, staffing, time-to-skill).",
+      "Rendre les compétences actionnables dans la performance & la progression (expertise vs management).",
+      "Optimiser le modèle opérationnel : transversalité, agilité, réduction des silos."
+    ]
+  },
+  tech: {
+    1: [
+      "Cartographier la donnée disponible (SIRH/LMS/ATS) et les écarts (skills, niveaux, historique).",
+      "Tester un outil sur un cas d’usage prioritaire (inventory skills, mobilité, learning).",
+      "Définir des exigences minimales : référentiel, collecte, analytics, gouvernance data."
+    ],
+    2: [
+      "Stabiliser un socle data compétences (qualité, ownership, règles de mise à jour).",
+      "Choisir un outil cible par cas d’usage (talent marketplace / skills cloud / LXP).",
+      "Intégrer l’outillage aux rituels RH (revues, plans, reporting)."
+    ],
+    3: [
+      "Industrialiser l’écosystème : interopérabilité SIRH–LMS–marketplace, analytics.",
+      "Mettre en place des recommandations personnalisées (opportunités, learning, mobilité).",
+      "Sécuriser conformité & adoption (RGPD, contrôle d’accès, conduite du changement)."
+    ]
+  }
+};
+
+function escapeText(s){
+  return String(s).replace(/[<>&"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+}
+
+function buildQuestionnaire(){
+  const root = document.getElementById("questionnaire");
+  root.innerHTML = "";
+
+  AXES.forEach((axis) => {
+    const axisTitle = document.createElement("div");
+    axisTitle.className = "pill";
+    axisTitle.style.margin = "0 0 10px 0";
+    axisTitle.innerHTML = `<b>${escapeText(axis.label)}</b> — ${axis.subaxes.length} sous-axe(s)`;
+    root.appendChild(axisTitle);
+
+    axis.subaxes.forEach((s) => {
+      const fs = document.createElement("fieldset");
+      const lg = document.createElement("legend");
+      lg.textContent = `${s.id} — ${s.title}`;
+      fs.appendChild(lg);
+
+      const meta = document.createElement("div");
+      meta.className = "qmeta";
+      meta.textContent = s.prompt;
+      fs.appendChild(meta);
+
+      const choices = document.createElement("div");
+      choices.className = "choices";
+
+      s.choices.forEach((txt, idx) => {
+        const level = idx + 1;
+        const label = document.createElement("label");
+        label.className = "choice";
+
+        const radio = document.createElement("input");
+        radio.type = "radio";
+        radio.name = s.id;
+        radio.value = String(level);
+        radio.setAttribute("aria-label", `${s.id} niveau ${level}`);
+
+        const body = document.createElement("div");
+        body.style.flex = "1";
+        const top = document.createElement("div");
+        top.innerHTML = `<span class="lvl">Niveau ${level}</span>`;
+        const p = document.createElement("div");
+        p.style.marginTop = "6px";
+        p.textContent = txt;
+
+        body.appendChild(top);
+        body.appendChild(p);
+
+        label.appendChild(radio);
+        label.appendChild(body);
+
+        choices.appendChild(label);
+      });
+
+      fs.appendChild(choices);
+      root.appendChild(fs);
+    });
+  });
+}
+
+function readAnswers(){
+  const answers = {};
+  AXES.forEach(axis => axis.subaxes.forEach(s => {
+    const sel = document.querySelector(`input[name="${CSS.escape(s.id)}"]:checked`);
+    answers[s.id] = sel ? Number(sel.value) : null;
+  }));
+  return answers;
+}
+
+function computeScores(answers){
+  const axisScores = {};
+  let total = 0, count = 0, answered = 0;
+
+  AXES.forEach(axis => {
+    let sum = 0, n = 0;
+    axis.subaxes.forEach(s => {
+      const v = answers[s.id];
+      if (v != null){
+        sum += v; n += 1; answered += 1;
+        total += v; count += 1;
+      }
+    });
+    axisScores[axis.key] = n ? (sum / n) : 0;
+  });
+
+  const overall = count ? (total / count) : 0;
+  return { axisScores, overall, answered };
+}
+
+function formatScore(x){
+  return (Math.round(x * 100) / 100).toFixed(2);
+}
+
+function axisExplanation(axisKey, lvl){
+  const map = {
+    alignement: {
+      1: "L’approche compétences est en démarrage : prise de conscience et recherche d’adhésion.",
+      2: "L’orientation compétences est portée et commence à s’inscrire dans une feuille de route commune.",
+      3: "La compétence devient un langage partagé RH/métiers avec des ressources dédiées sur le long terme."
+    },
+    culture: {
+      1: "Culture et management encore majoritairement “poste / hiérarchie”, avec pratiques hétérogènes.",
+      2: "Socles culturels et managériaux en place : promotion de l’approche et accompagnement des managers.",
+      3: "Le modèle est incarné : apprentissage continu, exemplarité managériale, valorisation des compétences critiques."
+    },
+    orgproc: {
+      1: "Premières réflexions sur les processus RH impactés, encore peu systématisées.",
+      2: "Cartographie métiers/compétences et premiers processus intégrant les compétences (partiellement).",
+      3: "Pilotage opérationnel par les compétences : anticipation, développement personnalisé, organisation plus transverse."
+    },
+    tech: {
+      1: "Peu/pas d’outillage dédié au pilotage des compétences.",
+      2: "Outils partiels / artisanaux : centralisation et premiers usages décisionnels.",
+      3: "Outillage intégré : collecte & analyse en continu, décisions plus éclairées, accompagnement personnalisé."
+    }
+  };
+  return (map[axisKey] && map[axisKey][lvl]) ? map[axisKey][lvl] : "";
+}
+
+function drawRadar(axisScores){
+  const canvas = document.getElementById("radar");
+  const ctx = canvas.getContext("2d");
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0,0,W,H);
+
+  const labels = AXES.map(a => a.label);
+  const values = AXES.map(a => axisScores[a.key] || 0); // sur 3
+  const cx = W * 0.5, cy = H * 0.56;
+  const radius = Math.min(W, H) * 0.34;
+  const N = labels.length;
+
+  function polar(i, r){
+    const angle = (-Math.PI/2) + (i * 2*Math.PI / N);
+    return [cx + r * Math.cos(angle), cy + r * Math.sin(angle)];
+  }
+
+  // grille niveaux 1-3
+  for(let lvl=1; lvl<=3; lvl++){
+    const r = radius * (lvl/3);
+    ctx.beginPath();
+    for(let i=0;i<N;i++){
+      const [x,y] = polar(i, r);
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = "rgba(255,255,255,.16)";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.fillStyle = "rgba(255,255,255,.40)";
+    ctx.font = "12px ui-sans-serif, system-ui, -apple-system";
+    ctx.fillText(String(lvl), cx + 6, cy - r + 12);
+  }
+
+  // axes
+  for(let i=0;i<N;i++){
+    const [x,y] = polar(i, radius);
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(x,y);
+    ctx.strokeStyle = "rgba(255,255,255,.12)";
+    ctx.stroke();
+
+    const [lx, ly] = polar(i, radius + 24);
+    ctx.fillStyle = "rgba(238,243,255,.92)";
+    ctx.font = "12px ui-sans-serif, system-ui, -apple-system";
+    const text = labels[i];
+    const w = ctx.measureText(text).width;
+    const tx = (lx < cx) ? lx - w : lx;
+    const ty = ly + (ly < cy ? -2 : 12);
+    ctx.fillText(text, tx, ty);
+  }
+
+  // profil utilisateur
+  ctx.beginPath();
+  for(let i=0;i<N;i++){
+    const r = radius * (Math.max(0, Math.min(3, values[i])) / 3);
+    const [x,y] = polar(i, r);
+    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  }
+  ctx.closePath();
+  ctx.fillStyle = "rgba(0,165,229,.22)";
+  ctx.strokeStyle = "rgba(0,165,229,.95)";
+  ctx.lineWidth = 2;
+  ctx.fill();
+  ctx.stroke();
+
+  for(let i=0;i<N;i++){
+    const r = radius * (Math.max(0, Math.min(3, values[i])) / 3);
+    const [x,y] = polar(i, r);
+    ctx.beginPath();
+    ctx.arc(x,y,3.5,0,Math.PI*2);
+    ctx.fillStyle = "rgba(0,165,229,1)";
+    ctx.fill();
+  }
+}
+
+function renderResults(){
+  const answers = readAnswers();
+  const {axisScores, overall, answered} = computeScores(answers);
+
+  const must = AXES.reduce((acc,a)=> acc + a.subaxes.length, 0);
+  const valid = (answered === must);
+
+  const validationMsg = document.getElementById("validationMsg");
+  validationMsg.classList.toggle("hidden", valid);
+
+  if(!valid){
+    document.getElementById("statusPill").innerHTML = "<b>Statut</b> : incomplet";
+    document.getElementById("resultIntro").className = "warnbox";
+    document.getElementById("resultIntro").innerHTML = "⚠️ Questionnaire incomplet : répondez aux <b>10 sous-axes</b> pour afficher les résultats.";
+    document.getElementById("results").classList.add("hidden");
+    return;
+  }
+
+  const lvl = levelFromScore(overall);
+  const lvlObj = GLOBAL_LEVELS[lvl];
+
+  document.getElementById("statusPill").innerHTML = "<b>Statut</b> : résultats affichés";
+  document.getElementById("resultIntro").classList.add("hidden");
+  document.getElementById("results").classList.remove("hidden");
+
+  document.getElementById("kOverall").textContent = formatScore(overall);
+  document.getElementById("kLevel").textContent = String(lvl);
+  document.getElementById("kAnswered").textContent = `${answered}/${must}`;
+
+  document.getElementById("globalCard").innerHTML =
+    `<div style="font-weight:850; font-size:16px; margin-bottom:6px">🎯 ${escapeText(lvlObj.title)} (Niveau ${lvl})</div>
+     <div>${escapeText(lvlObj.desc)}</div>`;
+
+  drawRadar(axisScores);
+
+  const axisDetails = document.getElementById("axisDetails");
+  axisDetails.innerHTML = "";
+  AXES.forEach(a=>{
+    const s = axisScores[a.key];
+    const alvl = levelFromScore(s);
+    const exp = axisExplanation(a.key, alvl);
+
+    const block = document.createElement("div");
+    block.className = "axisBlock";
+    block.innerHTML = `
+      <div class="axisHdr">
+        <h3>${escapeText(a.label)}</h3>
+        <span class="pill"><b>Score</b> : ${formatScore(s)} / 3 — Niveau ${alvl}</span>
+      </div>
+      <div class="small" style="margin-top:6px">${escapeText(exp)}</div>
+    `;
+    axisDetails.appendChild(block);
+  });
+
+  const reco = document.getElementById("reco");
+  reco.innerHTML = "";
+  AXES.forEach(a=>{
+    const s = axisScores[a.key];
+    const alvl = levelFromScore(s);
+    const items = (RECO[a.key] && RECO[a.key][alvl]) ? RECO[a.key][alvl] : [];
+
+    const block = document.createElement("div");
+    block.className = "axisBlock";
+    block.innerHTML = `
+      <div class="axisHdr">
+        <h3>${escapeText(a.label)}</h3>
+        <span class="pill"><b>Niveau</b> : ${alvl}</span>
+      </div>
+      <div class="small" style="margin-top:6px">Actions prioritaires (proposition) :</div>
+      <ul>${items.map(x=>`<li>${escapeText(x)}</li>`).join("")}</ul>
+    `;
+    reco.appendChild(block);
+  });
+}
+
+function resetAll(){
+  AXES.forEach(axis => axis.subaxes.forEach(s=>{
+    document.querySelectorAll(`input[name="${CSS.escape(s.id)}"]`).forEach(r => r.checked = false);
+  }));
+  document.getElementById("validationMsg").classList.add("hidden");
+  document.getElementById("statusPill").innerHTML = "<b>Statut</b> : en attente";
+  document.getElementById("resultIntro").className = "warnbox";
+  document.getElementById("resultIntro").innerHTML = "Répondez au questionnaire puis cliquez sur <b>“Découvrir mes résultats”</b>.";
+  document.getElementById("results").classList.add("hidden");
+  document.getElementById("resultIntro").classList.remove("hidden");
+  const ctx = document.getElementById("radar").getContext("2d");
+  ctx.clearRect(0,0,540,420);
+}
+
+function exportJSON(){
+  const answers = readAnswers();
+  const {axisScores, overall, answered} = computeScores(answers);
+  const must = AXES.reduce((acc,a)=> acc + a.subaxes.length, 0);
+
+  const payload = {
+    meta: {
+      tool: "Auto-diagnostic SBO",
+      scale: "1 (faible) -> 3 (élevée)",
+      answered: `${answered}/${must}`,
+      exportedAt: new Date().toISOString()
+    },
+    answers,
+    axisScores,
+    overallScore: overall,
+    overallLevel: levelFromScore(overall)
+  };
+
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "resultats-sbo.json";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+buildQuestionnaire();
+
+document.getElementById("btnResults").addEventListener("click", renderResults, {passive:true});
+document.getElementById("btnReset").addEventListener("click", resetAll, {passive:true});
+document.getElementById("btnExport").addEventListener("click", exportJSON, {passive:true});
+
+window.addEventListener("resize", () => {
+  const r = document.getElementById("results");
+  if(!r.classList.contains("hidden")){
+    renderResults();
+  }
+}, {passive:true});
+</script>
+</body>
+</html>
+``
